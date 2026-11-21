@@ -862,35 +862,93 @@
     }
   });
 
-  // ================= 폭죽 (종이 조각) =================
+  // ================= 축하 연출: 종이 폭죽 + 불꽃놀이 (여러 번 연속) =================
   const cv = $('fx'), c2 = cv.getContext('2d');
-  let parts = [], raf = 0;
-  function confetti() {
-    cv.width = innerWidth; cv.height = innerHeight;
-    const colors = ['#3a6bcf', '#4f4589', '#4560cc', '#ffb703', '#8fb3ff', '#b7a9f2', '#ffffff'];
-    for (let i = 0; i < 260; i++) {
-      const side = i % 2;
-      parts.push({
-        x: side ? cv.width + 10 : -10, y: cv.height * (.5 + Math.random() * .4),
-        vx: (side ? -1 : 1) * (6 + Math.random() * 12), vy: -(10 + Math.random() * 14),
-        s: 7 + Math.random() * 9, r: Math.random() * 6, vr: (Math.random() - .5) * .4,
-        c: colors[i % colors.length], life: 0
-      });
-    }
-    if (!raf) tick();
+  let parts = [], raf = 0, lastT = 0, W = 0, H = 0;
+  const PAPER = ['#ffd166', '#ffb703', '#ff5c7a', '#ffffff', '#8fb3ff', '#b7a9f2', '#7be0b0', '#e2545c'];
+  const SPARK = ['#ffd166', '#ff8fa3', '#9fc2ff', '#c9b6ff', '#8ff0c4', '#fff3b0'];
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function fitCanvas() {
+    const dpr = Math.min(2, devicePixelRatio || 1);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    c2.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
-  function tick() {
-    c2.clearRect(0, 0, cv.width, cv.height);
-    parts = parts.filter(p => p.y < cv.height + 40 && p.life < 400);
+  // 아래 양쪽 구석에서 종이 꽃가루 발사
+  function cannons(n) {
+    for (let i = 0; i < n; i++) {
+      const side = i % 2;
+      parts.push({ k: 'paper', x: side ? W + 10 : -10, y: H * rnd(.62, .95),
+        vx: (side ? -1 : 1) * rnd(7, 19), vy: -rnd(12, 23),
+        s: rnd(7, 15), r: rnd(0, 6), vr: rnd(-.35, .35), c: PAPER[i % PAPER.length], life: 0, max: 420 });
+    }
+  }
+  // 위에서 꽃가루 비
+  function shower(n) {
+    for (let i = 0; i < n; i++) parts.push({ k: 'paper', x: rnd(0, W), y: rnd(-H * .4, -10),
+      vx: rnd(-1.5, 1.5), vy: rnd(1, 4), s: rnd(7, 14), r: rnd(0, 6), vr: rnd(-.3, .3),
+      c: PAPER[i % PAPER.length], life: 0, max: 520 });
+  }
+  // 하늘에서 터지는 불꽃
+  function firework(x = W * rnd(.12, .88), y = H * rnd(.12, .42), n = 110) {
+    const c = SPARK[Math.floor(Math.random() * SPARK.length)];
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + rnd(-.05, .05), sp = rnd(3.5, 9.5);
+      parts.push({ k: 'spark', x, y, px: x, py: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        c: Math.random() < .2 ? '#ffffff' : c, life: 0, max: rnd(55, 85), sz: rnd(1.6, 3) });
+    }
+    popSound();
+  }
+  function popSound() {
+    if (!S.sound || !ac) return;
+    try { const t = ac.currentTime; noise(t, .12, { type: 'lowpass', freq: 900, gain: .35 }); noise(t, .25, { freq: 3000, q: .7, gain: .06, attack: .02 }); } catch {}
+  }
+  function confetti() {
+    fitCanvas();
+    const plan = [
+      [0, () => { cannons(320); firework(W * .5, H * .22, 140); }],
+      [350, () => firework()],
+      [700, () => { cannons(220); firework(); }],
+      [1050, () => firework()],
+      [1300, () => shower(220)],
+      [1450, () => { firework(); firework(); }],
+      [1900, () => { cannons(200); firework(); }],
+      [2350, () => firework()],
+      [2800, () => { firework(W * .3, H * .25, 130); firework(W * .7, H * .25, 130); cannons(160); }],
+      [3300, () => shower(160)],
+    ];
+    plan.forEach(([t, f]) => setTimeout(() => { f(); if (!raf) { lastT = performance.now(); raf = requestAnimationFrame(tick); } }, t));
+  }
+  function tick(now) {
+    const dt = Math.min(2.5, (now - lastT) / 16.67); lastT = now;
+    c2.clearRect(0, 0, W, H);
+    parts = parts.filter(p => p.life < p.max && p.y < H + 40);
+    // 종이
     for (const p of parts) {
-      p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life++;
-      c2.save(); c2.translate(p.x, p.y); c2.rotate(p.r);
-      c2.fillStyle = p.c; c2.strokeStyle = 'rgba(0,0,0,.08)';
-      c2.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .66); c2.strokeRect(-p.s / 2, -p.s / 3, p.s, p.s * .66);
+      if (p.k !== 'paper') continue;
+      p.vy += .32 * dt; p.vx *= Math.pow(.99, dt); p.vy = Math.min(p.vy, 7);
+      p.x += (p.vx + Math.sin((p.life + p.r * 10) / 9) * .6) * dt; p.y += p.vy * dt; p.r += p.vr * dt; p.life += dt;
+      c2.save(); c2.translate(p.x, p.y); c2.rotate(p.r); c2.scale(1, Math.cos(p.life / 6 + p.r));
+      c2.fillStyle = p.c; c2.fillRect(-p.s / 2, -p.s / 3, p.s, p.s * .66);
       c2.restore();
     }
-    raf = parts.length ? requestAnimationFrame(tick) : (c2.clearRect(0, 0, cv.width, cv.height), 0);
+    // 불꽃 (빛이 겹치면 더 밝게)
+    c2.globalCompositeOperation = 'lighter';
+    for (const p of parts) {
+      if (p.k !== 'spark') continue;
+      p.px = p.x; p.py = p.y;
+      p.vx *= Math.pow(.955, dt); p.vy = p.vy * Math.pow(.955, dt) + .07 * dt;
+      p.x += p.vx * dt; p.y += p.vy * dt; p.life += dt;
+      const a = Math.max(0, 1 - p.life / p.max);
+      c2.globalAlpha = a;
+      c2.strokeStyle = p.c; c2.lineWidth = p.sz; c2.lineCap = 'round';
+      c2.beginPath(); c2.moveTo(p.px - (p.x - p.px) * 2, p.py - (p.y - p.py) * 2); c2.lineTo(p.x, p.y); c2.stroke();
+      if (Math.random() < .25) { c2.fillStyle = '#fff'; c2.fillRect(p.x, p.y, 1.5, 1.5); } // 반짝임
+    }
+    c2.globalAlpha = 1; c2.globalCompositeOperation = 'source-over';
+    raf = parts.length ? requestAnimationFrame(tick) : (c2.clearRect(0, 0, W, H), 0);
   }
+  window.addEventListener('resize', () => { if (raf) fitCanvas(); });
 
   // ================= 초기화 =================
   renderHeader(); renderList();
