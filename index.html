@@ -41,38 +41,51 @@
   body {
     font-family: var(--font);
     color: var(--text);
+    /* 로고 남색·보라 계열의 어두운 무대, 책 뒤에 스포트라이트 */
     background:
-      radial-gradient(ellipse at 50% 0%, #ffffff 0%, transparent 60%),
-      radial-gradient(circle at 0% 100%, rgba(79, 69, 137, .12), transparent 45%),
-      radial-gradient(circle at 100% 100%, rgba(58, 107, 207, .14), transparent 45%),
-      var(--bg);
+      radial-gradient(ellipse 55% 50% at 50% 55%, rgba(120, 150, 255, .35) 0%, rgba(90, 110, 220, .12) 45%, transparent 75%),
+      radial-gradient(circle at 0% 100%, rgba(120, 90, 200, .35), transparent 50%),
+      radial-gradient(circle at 100% 0%, rgba(58, 107, 207, .30), transparent 50%),
+      linear-gradient(180deg, #1c2160 0%, #151948 55%, #0e1034 100%);
     overflow: hidden;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 1.6vh;
     user-select: none;
   }
-  /* 은은한 도트 패턴 */
+  /* 은은한 빛망울(보케) */
   body::before {
     content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
-    background-image: radial-gradient(rgba(69, 96, 204, .10) 1.5px, transparent 1.6px);
-    background-size: 28px 28px;
+    background-image:
+      radial-gradient(circle at 8% 22%, rgba(255, 214, 120, .22) 0 6px, transparent 7px),
+      radial-gradient(circle at 15% 70%, rgba(255, 255, 255, .14) 0 10px, transparent 11px),
+      radial-gradient(circle at 88% 18%, rgba(255, 255, 255, .16) 0 8px, transparent 9px),
+      radial-gradient(circle at 92% 62%, rgba(255, 214, 120, .18) 0 12px, transparent 13px),
+      radial-gradient(circle at 78% 88%, rgba(160, 180, 255, .18) 0 7px, transparent 8px),
+      radial-gradient(circle at 25% 92%, rgba(255, 214, 120, .14) 0 5px, transparent 6px),
+      radial-gradient(circle at 70% 8%, rgba(160, 180, 255, .16) 0 5px, transparent 6px),
+      radial-gradient(circle at 4% 48%, rgba(255, 255, 255, .10) 0 4px, transparent 5px),
+      radial-gradient(circle at 96% 40%, rgba(255, 255, 255, .10) 0 4px, transparent 5px);
+    filter: blur(1.5px);
+    animation: twinkle 5s ease-in-out infinite alternate;
   }
+  @keyframes twinkle { from { opacity: .55; } to { opacity: 1; } }
 
   header { display: flex; align-items: center; gap: 2vw; padding: 0 16px; }
   .logo {
     height: clamp(52px, 10vh, 120px); aspect-ratio: 1; border-radius: 50%;
-    box-shadow: 0 8px 24px rgba(69, 96, 204, .25);
+    box-shadow: 0 0 0 3px rgba(255,255,255,.25), 0 8px 28px rgba(0, 0, 0, .35);
     background: #fff;
   }
   h1 {
     font-size: clamp(24px, 4.8vh, 58px); font-weight: 800; letter-spacing: .04em;
-    background: linear-gradient(135deg, var(--blue), var(--purple));
+    background: linear-gradient(180deg, #ffffff 30%, #c9d6ff);
     -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 3px 12px rgba(0, 0, 0, .35));
   }
   .round {
     display: inline-block; margin-top: .6vh;
-    font-size: clamp(13px, 2.2vh, 24px); font-weight: 700; color: var(--purple);
-    background: rgba(79, 69, 137, .1); padding: .2em .8em; border-radius: 999px;
+    font-size: clamp(13px, 2.2vh, 24px); font-weight: 700; color: #e6e9ff;
+    background: rgba(255, 255, 255, .12); padding: .2em .8em; border-radius: 999px;
   }
   .round:empty { display: none; }
 
@@ -105,17 +118,17 @@
     font-family: var(--font); /* 로고와 같은 둥근 서체, 숫자 높이 모두 동일 */
     font-variant-numeric: tabular-nums;
     padding-top: calc(var(--cell) * .1); /* 이 서체는 숫자가 줄 위쪽에 놓여 있어 페이지 중앙으로 내림 */
-    color: var(--purple);
+    color: #1d1b2c; /* 종이 위 먹색 */
   }
-  .reel.done .strip div { color: var(--blue); }
+  .reel.done .strip div { color: #141220; }
   /* 아직 공개되지 않은 페이지: ? 표시 */
   .qmark {
     position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
     font-family: var(--font); font-weight: 800; font-size: calc(var(--cell) * .7); line-height: 1;
-    color: rgba(79, 69, 137, .2);
+    color: rgba(29, 27, 44, .14);
     animation: qpulse 1.8s ease-in-out infinite;
   }
-  @keyframes qpulse { 50% { color: rgba(79, 69, 137, .35); scale: 1.04; } }
+  @keyframes qpulse { 50% { color: rgba(29, 27, 44, .26); scale: 1.04; } }
   .book.q0 #page0 .qmark, .book.q1 #page1 .qmark { display: flex; }
   .book.q0 #reel0, .book.q1 #reel1 { visibility: hidden; }
   .slot.done { animation: pop .4s ease-out; }
@@ -123,9 +136,9 @@
 
   .status {
     font-size: clamp(16px, 2.8vh, 32px); font-weight: 800; min-height: 1.4em; text-align: center;
-    color: var(--purple); padding: 0 16px;
+    color: #dfe4ff; padding: 0 16px; text-shadow: 0 2px 10px rgba(0,0,0,.35);
   }
-  .status.big { color: var(--blue); font-size: clamp(22px, 4.2vh, 48px); }
+  .status.big { color: #ffd166; font-size: clamp(22px, 4.2vh, 48px); }
 
   /* 버튼 */
   .actions { display: flex; gap: 14px; align-items: center; min-height: clamp(48px, 7.2vh, 78px); flex-wrap: wrap; justify-content: center; padding: 0 16px; }
@@ -141,15 +154,21 @@
   .btn:hover { filter: brightness(1.07); }
   .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #1f3f86, 0 4px 10px rgba(44,85,173,.35); }
   .btn:disabled { filter: grayscale(.6) opacity(.6); cursor: default; animation: none; }
+  .btn.draw {
+    color: var(--blue-d);
+    background: linear-gradient(180deg, #ffffff, #e3eaff);
+    box-shadow: 0 4px 0 #8fa3df, 0 10px 26px rgba(0, 0, 0, .35);
+  }
+  .btn.draw:active { box-shadow: 0 1px 0 #8fa3df, 0 4px 12px rgba(0,0,0,.35); }
   .btn.draw { animation: breathe 1.6s ease-in-out infinite; font-size: clamp(18px, 2.9vh, 32px); height: clamp(48px, 7.2vh, 78px); padding: 0 clamp(28px, 4vw, 60px); }
   @keyframes breathe { 50% { transform: scale(1.05); } }
   .btn.ok {
-    background: linear-gradient(180deg, #7a6fc0, var(--purple) 55%, var(--purple-d));
-    box-shadow: 0 4px 0 #2a2350, 0 8px 18px rgba(79,69,137,.35);
+    background: linear-gradient(180deg, #9a8ff0, #6f63c8 55%, #554aa6);
+    box-shadow: 0 4px 0 #2e2668, 0 8px 18px rgba(0,0,0,.35);
   }
   .btn.alt {
-    color: var(--purple); background: #fff;
-    box-shadow: 0 0 0 2px var(--purple) inset, 0 6px 14px rgba(79,69,137,.18);
+    color: #fff; background: rgba(255,255,255,.08);
+    box-shadow: 0 0 0 2px rgba(255,255,255,.7) inset, 0 6px 14px rgba(0,0,0,.25);
   }
   .btn.alt:active { transform: translateY(3px); }
   .hidden { display: none !important; }
@@ -157,7 +176,7 @@
   /* 숨김 메뉴 버튼 */
   .menu-btn {
     position: fixed; top: 12px; right: 12px; width: 44px; height: 44px; border-radius: 50%;
-    border: 0; background: rgba(79,69,137,.1); color: var(--purple); font-size: 22px; cursor: pointer;
+    border: 0; background: rgba(255,255,255,.1); color: #fff; font-size: 22px; cursor: pointer;
     opacity: .15; transition: opacity .2s;
   }
   .menu-btn:hover, .menu-btn:focus-visible { opacity: 1; }
@@ -304,13 +323,13 @@
     <div class="slot right" id="page1"><div class="reel" id="reel1"><div class="strip"></div></div><div class="qmark">?</div></div>
   </div>
 
-  <div class="status" id="status">추첨 버튼을 눌러주세요</div>
+  <div class="status" id="status">넘기기 버튼을 눌러주세요</div>
 
   <div class="actions">
-    <button class="btn draw" id="btnDraw">추 첨</button>
-    <button class="btn draw hidden" id="btnNext">뒷자리 공개</button>
+    <button class="btn draw" id="btnDraw">넘기기</button>
+    <button class="btn draw hidden" id="btnNext">뒷자리 넘기기</button>
     <button class="btn ok hidden" id="btnConfirm">당첨 확정</button>
-    <button class="btn alt hidden" id="btnRedraw">재추첨</button>
+    <button class="btn alt hidden" id="btnRedraw">다시 넘기기</button>
   </div>
 
   <canvas id="fx"></canvas>
@@ -319,10 +338,10 @@
   <button class="menu-btn" id="menuBtn" title="명단 / 설정 (L)" aria-label="명단 및 설정 열기">☰</button>
   <div class="drawer-bg" id="drawerBg"></div>
   <aside class="drawer" aria-label="명단 및 설정">
-    <h2>추첨 기록 <button class="x" id="closeBtn" aria-label="닫기">×</button></h2>
+    <h2>넘긴 기록 <button class="x" id="closeBtn" aria-label="닫기">×</button></h2>
     <div class="tabs">
       <button class="tab on" data-tab="winners">당첨 <span id="cntW">0</span></button>
-      <button class="tab" data-tab="redraws">재추첨 <span id="cntR">0</span></button>
+      <button class="tab" data-tab="redraws">다시 넘김 <span id="cntR">0</span></button>
     </div>
     <div class="list" id="list"></div>
     <div class="settings">
@@ -334,7 +353,7 @@
         <button class="danger" id="resetBtn">전체 초기화</button>
       </div>
       <div class="hint">
-        단축키: <b>Space</b> 추첨 / 뒷자리 공개 ·<b>L</b> 명단 열기/닫기 · <b>Esc</b> 닫기<br>
+        단축키: <b>Space</b> 넘기기 / 뒷자리 넘기기 · <b>L</b> 명단 열기/닫기 · <b>Esc</b> 닫기<br>
         남은 번호: <span id="remain"></span>개 · 데이터는 이 브라우저에만 저장되며 캐시(사이트 데이터) 삭제 시 초기화됩니다.
       </div>
     </div>
@@ -656,7 +675,7 @@
   async function draw() {
     if (busy) return;
     const pool = remaining();
-    if (!pool.length) { setStatus('모든 번호가 추첨되었습니다'); show('over'); return; }
+    if (!pool.length) { setStatus('모든 페이지를 넘겼습니다'); show('over'); return; }
     busy = true;
     const n = pool[Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32 * pool.length)];
     S.pending = n; S.stage = 1; save();
@@ -699,7 +718,7 @@
     setStatus(`🎉 ${pad(n)}번 당첨! 축하합니다 🎉`, true);
     confetti(); sfx('confirm');
     show('idle');
-    btnDraw.textContent = '다음 추첨';
+    btnDraw.textContent = '다음 페이지 넘기기';
   }
 
   function redraw() {
@@ -737,7 +756,7 @@
     const fmt = t => new Date(t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     $('list').innerHTML = arr.length
       ? arr.map((x, i) => `<div class="row"><span class="no">${i + 1}</span><span class="num">${pad(x.n)}</span><span class="t">${fmt(x.t)}</span></div>`).join('')
-      : `<div class="empty">${tab === 'winners' ? '아직 당첨자가 없습니다' : '재추첨 기록이 없습니다'}</div>`;
+      : `<div class="empty">${tab === 'winners' ? '아직 당첨자가 없습니다' : '다시 넘긴 기록이 없습니다'}</div>`;
   }
   $('titleInput').value = S.title;
   $('titleInput').oninput = e => { S.title = e.target.value; save(); renderHeader(); };
@@ -750,20 +769,20 @@
   $('soundChk').onchange = e => { S.sound = e.target.checked; save(); if (!S.sound) stopSpinSound(); };
   updateSoundSrc();
   $('copyBtn').onclick = async () => {
-    const txt = `[당첨] ${S.winners.map(x => pad(x.n)).join(', ') || '-'}\n[재추첨] ${S.redraws.map(x => pad(x.n)).join(', ') || '-'}`;
+    const txt = `[당첨] ${S.winners.map(x => pad(x.n)).join(', ') || '-'}\n[다시 넘김] ${S.redraws.map(x => pad(x.n)).join(', ') || '-'}`;
     try { await navigator.clipboard.writeText(txt); $('copyBtn').textContent = '복사됨 ✓'; }
     catch { prompt('명단', txt); }
     setTimeout(() => $('copyBtn').textContent = '명단 복사', 1500);
   };
   $('resetBtn').onclick = () => {
-    if (!confirm('당첨/재추첨 기록을 모두 지우고 처음부터 시작할까요?')) return;
+    if (!confirm('당첨/다시 넘김 기록을 모두 지우고 처음부터 시작할까요?')) return;
     if (busy) return;
     const keep = { title: S.title, sound: S.sound, reelSec: S.reelSec };
     S = Object.assign(fresh(), keep); save();
     reels.forEach(r => { setReel(r, 0); r.el.classList.remove('done'); });
     hideDigit(0, true); hideDigit(1, true);
-    btnDraw.textContent = '추 첨';
-    setStatus('추첨 버튼을 눌러주세요');
+    btnDraw.textContent = '넘기기';
+    setStatus('넘기기 버튼을 눌러주세요');
     show('idle'); renderHeader(); renderList();
   };
 
@@ -825,8 +844,8 @@
     requestAnimationFrame(() => reels.forEach(r => setReel(r, 0)));
     hideDigit(0, true); hideDigit(1, true);
     show('idle');
-    if (S.winners.length) btnDraw.textContent = '다음 추첨';
-    if (!remaining().length) { setStatus('모든 번호가 추첨되었습니다'); btnDraw.disabled = true; }
+    if (S.winners.length) btnDraw.textContent = '다음 페이지 넘기기';
+    if (!remaining().length) { setStatus('모든 페이지를 넘겼습니다'); btnDraw.disabled = true; }
   }
 })();
 </script>
