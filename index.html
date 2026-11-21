@@ -377,6 +377,7 @@
   const buffers = {};  // 디코딩된 AudioBuffer
   const pools = {};    // <audio> 대체 재생용
   const POOL = 4;
+  const VOLUME = { spin: 1, stop: 1, win: 1, confirm: .7 }; // 파일별 음량 (환호 소리는 책장 소리보다 약 10dB 커서 낮춤)
 
   let ac, noiseBuf;
   function ctx() {
@@ -446,7 +447,7 @@
     if (buffers[k]) {
       const c = ctx(), t = c.currentTime + when;
       const src = c.createBufferSource(), g = c.createGain();
-      src.buffer = buffers[k]; src.connect(g).connect(c.destination);
+      src.buffer = buffers[k]; g.gain.value = VOLUME[k] ?? 1; src.connect(g).connect(c.destination);
       src.start(t, offset);
       return {
         stop(fade = 0) {
@@ -462,7 +463,7 @@
     if (!pool) return null; // 아직 디코딩 전 → 합성음으로 대체
     const a = pool[poolIdx++ % pool.length];
     let timer = null, fadeRaf = 0;
-    const go = () => { a.volume = 1; a.currentTime = offset; a.play().catch(() => {}); };
+    const go = () => { a.volume = VOLUME[k] ?? 1; a.currentTime = offset; a.play().catch(() => {}); };
     when > 0 ? (timer = setTimeout(go, when * 1000)) : go();
     return {
       stop(fade = 0) {
