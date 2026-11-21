@@ -366,26 +366,17 @@
   // ================= 사운드 =================
   // 1) sounds/ 폴더에 파일이 있으면 그 파일을 재생
   // 2) 없으면 Web Audio로 실제 소리처럼 합성 (노이즈 기반 기계음/종소리/박수)
+  //
+  // 브라우저 자동재생 정책 대응 (특히 Safari / iPhone):
+  //  - 오디오 엔진은 사용자가 처음 클릭/키를 누르는 순간 만들고 깨움(unlock)
+  //  - 파일은 Web Audio로 미리 디코딩해서 정확한 시각에 예약 재생 (타이머 + 복제 재생은 Safari가 막음)
+  //  - file:// 로 열어 fetch가 안 되면 <audio> 풀을 쓰고, 첫 클릭 때 한 번씩 재생해 잠금 해제
   const FILES = { spin: 'sounds/spin.mp3', stop: 'sounds/stop.mp3', win: 'sounds/win.mp3', confirm: 'sounds/confirm.mp3' };
-  const audioFiles = {};
-  for (const [k, src] of Object.entries(FILES)) {
-    const a = new Audio();
-    a.preload = 'auto';
-    a.oncanplaythrough = () => { audioFiles[k] = a; updateSoundSrc(); };
-    a.onerror = () => {};
-    a.src = src;
-  }
-  function updateSoundSrc() {
-    const n = Object.keys(audioFiles).length;
-    $('soundSrc').textContent = n ? `(파일 ${n}개 사용 중)` : '(내장 합성음)';
-  }
-  function playFile(k, { loop = false, offset = 0 } = {}) {
-    const a = audioFiles[k];
-    if (!a || !S.sound) return null;
-    const c = loop ? a : a.cloneNode();
-    c.loop = loop; c.volume = 1; c.currentTime = offset; c.play().catch(() => {});
-    return c;
-  }
+  const loaded = {};   // 사용 가능한 파일
+  const raw = {};      // fetch로 받은 원본 (디코딩 대기)
+  const buffers = {};  // 디코딩된 AudioBuffer
+  const pools = {};    // <audio> 대체 재생용
+  const POOL = 4;
 
   let ac, noiseBuf;
   function ctx() {
@@ -395,8 +386,96 @@
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
-    if (ac.state === 'suspended') ac.resume();
+    if (ac.state !== 'running') ac.resume().catch(() => {});
     return ac;
+  }
+  // 디코딩은 클릭 전에도 가능한 오프라인 엔진으로 미리 해둠 → 첫 추첨부터 바로 재생
+  let decoder = null;
+  function decodeAll() {
+    try { decoder = decoder || ac || new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, 1, 48000); }
+    catch { return; }
+    for (const k of Object.keys(raw)) {
+      const data = raw[k]; delete raw[k];
+      decoder.decodeAudioData(data).then(b => { buffers[k] = b; }).catch(() => {});
+    }
+  }
+  for (const [k, src] of Object.entries(FILES)) {
+    fetch(src).then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+      .then(data => { raw[k] = data; loaded[k] = true; updateSoundSrc(); decodeAll(); })
+      .catch(() => { // file:// 등 fetch 불가 → <audio> 풀
+        const a = new Audio(); a.preload = 'auto';
+        a.oncanplaythrough = () => {
+          if (pools[k]) return;
+          pools[k] = [a, ...Array.from({ length: POOL - 1 }, () => a.cloneNode())];
+          loaded[k] = true; updateSoundSrc();
+        };
+        a.onerror = () => {};
+        a.src = src;
+      });
+  }
+
+  // 첫 사용자 동작에서 오디오 잠금 해제
+  let poolsUnlocked = false;
+  function unlockAudio() {
+    try {
+      if (navigator.audioSession) navigator.audioSession.type = 'playback'; // iPhone 무음 스위치 무시
+      const c = ctx();
+      const s = c.createBufferSource(); s.buffer = c.createBuffer(1, 1, c.sampleRate);
+      s.connect(c.destination); s.start(0);
+      decodeAll();
+      if (!poolsUnlocked) {
+        const all = Object.values(pools).flat();
+        if (all.length) {
+          poolsUnlocked = true;
+          all.forEach(a => { a.muted = true; a.play().then(() => { a.pause(); a.muted = false; }).catch(() => { a.muted = false; }); });
+        }
+      }
+    } catch {}
+  }
+  ['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { capture: true }));
+
+  function updateSoundSrc() {
+    const n = Object.keys(loaded).length;
+    $('soundSrc').textContent = n ? `(파일 ${n}개 사용 중)` : '(내장 합성음)';
+  }
+
+  // 파일 재생: when(초) 뒤에 offset(초)부터. stop(페이드ms)로 멈출 수 있는 핸들 반환
+  let poolIdx = 0;
+  function playFile(k, { offset = 0, when = 0 } = {}) {
+    if (!S.sound || !loaded[k]) return null;
+    if (buffers[k]) {
+      const c = ctx(), t = c.currentTime + when;
+      const src = c.createBufferSource(), g = c.createGain();
+      src.buffer = buffers[k]; src.connect(g).connect(c.destination);
+      src.start(t, offset);
+      return {
+        stop(fade = 0) {
+          const now = c.currentTime;
+          g.gain.cancelScheduledValues(now);
+          g.gain.setValueAtTime(g.gain.value, now);
+          g.gain.linearRampToValueAtTime(0, now + fade / 1000);
+          try { src.stop(Math.max(now, t) + fade / 1000 + .02); } catch {}
+        }
+      };
+    }
+    const pool = pools[k];
+    if (!pool) return null; // 아직 디코딩 전 → 합성음으로 대체
+    const a = pool[poolIdx++ % pool.length];
+    let timer = null, fadeRaf = 0;
+    const go = () => { a.volume = 1; a.currentTime = offset; a.play().catch(() => {}); };
+    when > 0 ? (timer = setTimeout(go, when * 1000)) : go();
+    return {
+      stop(fade = 0) {
+        clearTimeout(timer); cancelAnimationFrame(fadeRaf);
+        const t0 = performance.now(), v0 = a.volume;
+        const step = () => {
+          const r = fade ? 1 - (performance.now() - t0) / fade : 0;
+          if (r <= 0) { a.pause(); a.volume = 1; return; }
+          a.volume = v0 * r; fadeRaf = requestAnimationFrame(step);
+        };
+        step();
+      }
+    };
   }
   function noise(t, dur, { type = 'bandpass', freq = 2000, q = 1, gain = .4, attack = .001, out } = {}) {
     const c = ctx();
@@ -460,30 +539,18 @@
   // 회전이 길면 여러 번 겹쳐 재생해 끊김 없이 이어지게 하고,
   // 마지막 재생은 소리가 잦아드는 꼬리가 릴이 멈추는 시점에 맞도록 시작 시각을 잡음
   const SHUFFLE_TAIL = 4600, SHUFFLE_STEP = 2600;
-  let spinTimers = [];
   function startSpinSound(totalMs) {
-    if (!S.sound || !audioFiles.spin) return;
-    spinLoop = [];
+    if (!S.sound || !loaded.spin) return;
     const last = Math.max(0, totalMs - SHUFFLE_TAIL);
     const count = Math.ceil(last / SHUFFLE_STEP);
     const starts = Array.from({ length: count + 1 }, (_, i) => count ? last * i / count : 0);
-    spinTimers = starts.map(t => setTimeout(() => {
-      const a = playFile('spin', { offset: .15 });
-      if (a && spinLoop) spinLoop.push(a);
-    }, t));
+    // 처음부터 모든 재생을 정확한 시각에 예약 (클릭 순간에 예약하므로 Safari도 허용)
+    const handles = starts.map(t => playFile('spin', { offset: .15, when: t / 1000 })).filter(Boolean);
+    spinLoop = handles.length ? handles : null;
   }
   function stopSpinSound() { // 마지막 자리가 멈추면 0.4초에 걸쳐 부드럽게 줄임
-    spinTimers.forEach(clearTimeout); spinTimers = [];
     const list = spinLoop || []; spinLoop = null;
-    for (const a of list) {
-      const t0 = performance.now(), v0 = a.volume;
-      const fade = () => {
-        const k = 1 - (performance.now() - t0) / 400;
-        if (k <= 0) { a.pause(); return; }
-        a.volume = v0 * k; requestAnimationFrame(fade);
-      };
-      fade();
-    }
+    list.forEach(h => h.stop(400));
   }
   function tickSound(slow = false) {
     // 책장 소리 재생 중에는 빠를 때 틱 생략, 느려지는 막판엔 숫자마다 딸깍
