@@ -82,12 +82,6 @@
     -webkit-background-clip: text; background-clip: text; color: transparent;
     filter: drop-shadow(0 3px 12px rgba(0, 0, 0, .35));
   }
-  .round {
-    display: inline-block; margin-top: .6vh;
-    font-size: clamp(13px, 2.2vh, 24px); font-weight: 700; color: #e6e9ff;
-    background: rgba(255, 255, 255, .12); padding: .2em .8em; border-radius: 999px;
-  }
-  .round:empty { display: none; }
 
   /* ===== 펼친 책 슬롯 (SVG 일러스트) ===== */
   .book {
@@ -235,7 +229,6 @@
     <img class="logo" src="logo.png" alt="책읽는 방주">
     <div>
       <h1 id="title">행운의 페이지</h1>
-      <div class="round" id="round"></div>
     </div>
   </header>
 
@@ -350,6 +343,20 @@
       <!-- 단면 아래쪽 음영 -->
       <g fill="url(#gStackShade)"><use href="#pL" transform="translate(-9.1 26)"/><use href="#pR" transform="translate(9.1 26)"/></g>
 
+      <!-- 책갈피 끈: 페이지 사이에 끼워져 있고, 책 아래쪽 끝부분만 빠져나와 늘어짐
+           (펼친 페이지보다 먼저 그려서 윗부분은 페이지에 가려짐) -->
+      <path d="M485,585 L519,585 L520,620 C524,648 529,672 538,706 L522,692 L505,702 C493,668 487,646 486,620 Z" fill="#000" opacity=".4" filter="url(#fSoft)" transform="translate(6 6)"/>
+      <path id="ribbon" d="M485,585 L519,585 L520,620 C524,648 529,672 538,706 L522,692 L505,702 C493,668 487,646 486,620 Z" fill="url(#gRibbon)"/>
+      <use href="#ribbon" fill="url(#pRib)"/>
+      <!-- 종이 단면 끝에서 꺾이는 부분 -->
+      <path d="M486,618 L520,618 C521,628 522,636 523,644 L488,644 C487,636 486,628 486,618 Z" fill="url(#gRibbonFold)"/>
+      <path d="M495,588 L496,620 C498,650 503,674 511,696" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="2.4"/>
+      <use href="#ribbon" fill="none" stroke="#1a1438" stroke-opacity=".55" stroke-width="1.1"/>
+      <g stroke="#7b70c4" stroke-width="1.1" stroke-linecap="round" opacity=".85">
+        <path d="M506,701 L504,709"/><path d="M510,699 L509,706"/><path d="M514,696 L514,702"/>
+        <path d="M526,694 L528,701"/><path d="M531,700 L534,707"/><path d="M536,705 L539,712"/>
+      </g>
+
       <!-- 펼친 두 페이지 -->
       <use href="#pL" fill="url(#gPageL)"/>
       <use href="#pR" fill="url(#gPageR)"/>
@@ -376,23 +383,6 @@
         <text x="730" y="540" font-size="16" letter-spacing="2">— 일의 자리 —</text>
       </g>
 
-      <!-- 책갈피 끈: 책등 골에서 나와 페이지 끝에서 꺾여 표지 아래로 늘어짐 -->
-      <path d="M483,380 L517,380 L519,596 C523,630 528,664 538,706 L522,688 L505,700 C492,660 486,630 485,596 Z" fill="#000" opacity=".4" filter="url(#fSoft)" transform="translate(6 6)" mask="url(#mRibbon)"/>
-      <g mask="url(#mRibbon)">
-        <path id="ribbon" d="M483,380 L517,380 L519,596 C523,630 528,664 538,706 L522,688 L505,700 C492,660 486,630 485,596 Z" fill="url(#gRibbon)"/>
-        <use href="#ribbon" fill="url(#pRib)"/>
-        <!-- 페이지 끝에서 꺾이는 부분: 접힘 그림자 -->
-        <path d="M485,596 L519,596 C520,606 521,614 522,622 L487,622 C486,614 485,606 485,596 Z" fill="url(#gRibbonFold)"/>
-        <!-- 광택 줄 -->
-        <path d="M494,384 L495,596 C497,630 502,660 511,694" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="2.4"/>
-        <path d="M509,384 L510,596" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width="1.4"/>
-        <use href="#ribbon" fill="none" stroke="#1a1438" stroke-opacity=".55" stroke-width="1.1"/>
-      </g>
-      <!-- 끝 올 풀림 -->
-      <g stroke="#7b70c4" stroke-width="1.1" stroke-linecap="round" opacity=".85">
-        <path d="M506,699 L504,707"/><path d="M510,697 L509,704"/><path d="M514,694 L514,700"/>
-        <path d="M526,692 L528,699"/><path d="M531,698 L534,705"/><path d="M536,704 L539,711"/>
-      </g>
     </svg>
     <div class="slot left" id="page0"><div class="reel" id="reel0"><div class="strip"></div></div><div class="qmark">?</div></div>
     <div class="slot right" id="page1"><div class="reel" id="reel1"><div class="strip"></div></div><div class="qmark">?</div></div>
@@ -739,7 +729,6 @@
   function renderHeader() {
     $('title').textContent = S.title || '행운의 페이지';
     document.title = '책읽는 방주 · ' + (S.title || '행운의 페이지');
-    $('round').textContent = S.winners.length ? `당첨 ${S.winners.length}명` : '';
   }
 
   // ================= 추첨 흐름 =================
