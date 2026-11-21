@@ -34,7 +34,7 @@
     --text: #2b2950;
     --muted: #7a7aa0;
     --accent: #ffb703;
-    --cell: min(44vh, 30vw);
+    --cell: min(40vh, 28vw); /* 머리글·책·버튼이 화면 높이 안에 여유 있게 들어가는 크기 */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
@@ -49,7 +49,8 @@
       linear-gradient(180deg, #1c2160 0%, #151948 55%, #0e1034 100%);
     overflow: hidden;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 1.6vh;
+    gap: 1.4vh;
+    padding: 3vh 0;
     user-select: none;
   }
   /* 은은한 빛망울(보케) */
@@ -88,7 +89,7 @@
     position: relative;
     height: calc(var(--cell) / .68);
     aspect-ratio: 1000 / 640;
-    margin-bottom: calc(var(--cell) * .2); /* 아래로 늘어진 책갈피 끈 자리 */
+    margin-bottom: calc(var(--cell) * .13); /* 아래로 늘어진 책갈피 끈 자리 */
   }
   .book > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   .book.win > svg { animation: glow 1s ease-in-out infinite alternate; }
@@ -235,21 +236,33 @@
   <div class="book" id="book">
     <svg viewBox="0 0 1000 640" aria-hidden="true">
       <defs>
-        <!-- 표지(천 질감 하드커버) -->
+        <!-- 성경책 표지: 검은 가죽 -->
         <linearGradient id="gCover" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#4d7fe3"/><stop offset=".55" stop-color="#3a6bcf"/><stop offset="1" stop-color="#2b52a8"/>
+          <stop offset="0" stop-color="#3a322c"/><stop offset=".5" stop-color="#26201c"/><stop offset="1" stop-color="#171310"/>
         </linearGradient>
         <linearGradient id="gCoverEdge" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#22428c"/><stop offset="1" stop-color="#162d63"/>
+          <stop offset="0" stop-color="#120e0c"/><stop offset="1" stop-color="#070605"/>
         </linearGradient>
         <linearGradient id="gSpine" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#1b3575"/><stop offset=".5" stop-color="#2f5bb8"/><stop offset="1" stop-color="#1b3575"/>
+          <stop offset="0" stop-color="#0d0a08"/><stop offset=".5" stop-color="#2e2620"/><stop offset="1" stop-color="#0d0a08"/>
         </linearGradient>
-        <filter id="fCloth" x="0" y="0" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency="1.6 .9" numOctaves="2" seed="3" result="n"/>
-          <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .10 0"/>
+        <!-- 가죽 결: 오톨도톨한 엠보싱 -->
+        <filter id="fLeather" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="11" result="n"/>
+          <feDiffuseLighting in="n" surfaceScale="1.6" lighting-color="#fff" result="lit">
+            <feDistantLight azimuth="235" elevation="55"/>
+          </feDiffuseLighting>
+          <feColorMatrix in="lit" type="matrix" values="0 0 0 0 1  0 0 0 0 .95  0 0 0 0 .9  .22 0 0 0 -.1"/>
           <feComposite in2="SourceGraphic" operator="in"/>
         </filter>
+
+        <!-- 금박 책배(페이지 단면) -->
+        <linearGradient id="gGilt" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#f6e08a"/><stop offset=".45" stop-color="#d9ad45"/><stop offset="1" stop-color="#a87a22"/>
+        </linearGradient>
+        <linearGradient id="gStackShade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#3a2400" stop-opacity=".35"/>
+        </linearGradient>
 
         <!-- 페이지: 바깥은 밝고 책등 쪽으로 휘어 들어가며 어두워짐 -->
         <linearGradient id="gPageL" x1="0" y1="0" x2="1" y2="0">
@@ -267,43 +280,30 @@
           <stop offset=".5" stop-color="#5a4320" stop-opacity=".38"/>
           <stop offset="1" stop-color="#5a4320" stop-opacity="0"/>
         </linearGradient>
-        <!-- 종이 단면(두께) 그림자: 아래로 갈수록 어두움 -->
-        <linearGradient id="gStackShade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#3a2c10" stop-opacity=".28"/>
-        </linearGradient>
         <filter id="fPaper" x="0" y="0" width="100%" height="100%">
           <feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="3" seed="7" result="n"/>
           <feColorMatrix in="n" type="matrix" values="0 0 0 0 .35  0 0 0 0 .28  0 0 0 0 .15  0 0 0 .055 0"/>
           <feComposite in2="SourceGraphic" operator="in"/>
         </filter>
 
-        <!-- 책갈피 끈: 새틴 광택 + 결 -->
+        <!-- 책갈피 끈: 진홍색 새틴 -->
         <linearGradient id="gRibbon" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stop-color="#2c2556"/><stop offset=".22" stop-color="#4f4589"/>
-          <stop offset=".42" stop-color="#8f84d6"/><stop offset=".55" stop-color="#6a5fb0"/>
-          <stop offset=".85" stop-color="#3f3678"/><stop offset="1" stop-color="#2a2352"/>
+          <stop offset="0" stop-color="#4a070d"/><stop offset=".25" stop-color="#8e1520"/>
+          <stop offset=".45" stop-color="#e2545c"/><stop offset=".6" stop-color="#b3202b"/>
+          <stop offset="1" stop-color="#5a0a11"/>
         </linearGradient>
-        <!-- 그로그랭 리본 결: 촘촘한 가로 골 + 옅은 세로 실 -->
-        <pattern id="pRib" width="4" height="2.6" patternUnits="userSpaceOnUse">
-          <rect y="0" width="4" height=".9" fill="#000" opacity=".30"/>
-          <rect y="1.3" width="4" height=".5" fill="#fff" opacity=".10"/>
-          <rect x="0" width=".5" height="2.6" fill="#fff" opacity=".07"/>
+        <pattern id="pRib" width="4" height="2.2" patternUnits="userSpaceOnUse">
+          <rect y="0" width="4" height=".8" fill="#000" opacity=".32"/>
+          <rect y="1.1" width="4" height=".45" fill="#fff" opacity=".12"/>
         </pattern>
         <linearGradient id="gRibbonFold" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#0d0a24" stop-opacity=".65"/><stop offset=".35" stop-color="#fff" stop-opacity=".18"/><stop offset="1" stop-color="#0d0a24" stop-opacity="0"/>
+          <stop offset="0" stop-color="#1a0204" stop-opacity=".7"/><stop offset=".35" stop-color="#fff" stop-opacity=".18"/><stop offset="1" stop-color="#1a0204" stop-opacity="0"/>
         </linearGradient>
-        <linearGradient id="gRibbonMask" gradientUnits="userSpaceOnUse" x1="0" y1="380" x2="0" y2="470">
-          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="1"/>
-        </linearGradient>
-        <mask id="mRibbon" maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="760">
-          <rect x="0" y="0" width="1000" height="760" fill="url(#gRibbonMask)"/>
-        </mask>
-        <filter id="fSoft" x="-50%" y="-20%" width="200%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
+        <filter id="fSoft" x="-50%" y="-20%" width="200%" height="140%"><feGaussianBlur stdDeviation="2.5"/></filter>
         <filter id="fShadow" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
 
         <path id="pL" d="M500,82 C430,46 250,36 54,50 L46,566 C250,554 430,560 500,594 Z"/>
         <path id="pR" d="M500,82 C570,46 750,36 946,50 L954,566 C750,554 570,560 500,594 Z"/>
-        <!-- 표지 판: 페이지 모양을 따라 살짝 크게, 모서리 둥글게 -->
         <path id="bL" d="M500,74 C420,34 240,22 34,34 Q20,35 20,50 L14,596 Q14,612 30,612 C240,606 420,612 500,640 Z"/>
         <path id="bR" d="M500,74 C580,34 760,22 966,34 Q980,35 980,50 L986,596 Q986,612 970,612 C760,606 580,612 500,640 Z"/>
         <clipPath id="cPages"><use href="#pL"/><use href="#pR"/></clipPath>
@@ -311,50 +311,51 @@
       </defs>
 
       <!-- 바닥 그림자 -->
-      <ellipse cx="500" cy="640" rx="480" ry="26" fill="#000" opacity=".55" filter="url(#fShadow)"/>
+      <ellipse cx="500" cy="640" rx="480" ry="26" fill="#000" opacity=".6" filter="url(#fShadow)"/>
 
-      <!-- 표지 두께(옆면) → 표지 판 → 천 질감 -->
+      <!-- 가죽 표지: 두께 → 판 → 가죽 결 -->
       <g transform="translate(0 9)" fill="url(#gCoverEdge)"><use href="#bL"/><use href="#bR"/></g>
       <use href="#bL" fill="url(#gCover)"/>
       <use href="#bR" fill="url(#gCover)"/>
-      <rect width="1000" height="660" fill="#fff" clip-path="url(#cBoards)" filter="url(#fCloth)"/>
-      <!-- 표지 가장자리 하이라이트 -->
-      <path d="M496,76 C420,38 240,26 36,38" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="2.5"/>
-      <path d="M504,76 C580,38 760,26 964,38" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="2.5"/>
-      <!-- 책등(가운데 접힘) -->
+      <rect width="1000" height="660" fill="#fff" clip-path="url(#cBoards)" filter="url(#fLeather)"/>
+      <!-- 가장자리 윤곽광 (어두운 배경에서 표지가 묻히지 않게) -->
+      <g fill="none" stroke="#c9b48a" stroke-opacity=".35" stroke-width="1.6"><use href="#bL"/><use href="#bR"/></g>
+      <!-- 금색 바느질 테두리 -->
+      <g fill="none" stroke="#c9a24a" stroke-width="1.6" stroke-dasharray="7 5" stroke-linecap="round" opacity=".85">
+        <path d="M478,64 C405,34 238,30 40,41 Q28,42 28,55 L22,590 Q22,603 35,603 C238,598 405,603 478,626"/>
+        <path d="M522,64 C595,34 762,30 960,41 Q972,42 972,55 L978,590 Q978,603 965,603 C762,598 595,603 522,626"/>
+      </g>
+      <!-- 책등 -->
       <path d="M486,90 L514,90 L514,636 Q500,646 486,636 Z" fill="url(#gSpine)"/>
 
-      <!-- 종이 단면: 얇은 종이 14장이 겹친 두께 -->
-      <g stroke="#cdbf9c" stroke-width=".9">
-        <g fill="#e6dcc2"><use href="#pL" transform="translate(-9.1 26)"/><use href="#pR" transform="translate(9.1 26)"/></g>
-        <g fill="#efe6cf"><use href="#pL" transform="translate(-8.4 24)"/><use href="#pR" transform="translate(8.4 24)"/></g>
-        <g fill="#e8dec5"><use href="#pL" transform="translate(-7.7 22)"/><use href="#pR" transform="translate(7.7 22)"/></g>
-        <g fill="#f1e8d2"><use href="#pL" transform="translate(-7 20)"/><use href="#pR" transform="translate(7 20)"/></g>
-        <g fill="#e9dfc7"><use href="#pL" transform="translate(-6.3 18)"/><use href="#pR" transform="translate(6.3 18)"/></g>
-        <g fill="#f2e9d4"><use href="#pL" transform="translate(-5.6 16)"/><use href="#pR" transform="translate(5.6 16)"/></g>
-        <g fill="#ebe1c9"><use href="#pL" transform="translate(-4.9 14)"/><use href="#pR" transform="translate(4.9 14)"/></g>
-        <g fill="#f3ebd6"><use href="#pL" transform="translate(-4.2 12)"/><use href="#pR" transform="translate(4.2 12)"/></g>
-        <g fill="#ece3cc"><use href="#pL" transform="translate(-3.5 10)"/><use href="#pR" transform="translate(3.5 10)"/></g>
-        <g fill="#f4ecd8"><use href="#pL" transform="translate(-2.8 8)"/><use href="#pR" transform="translate(2.8 8)"/></g>
-        <g fill="#eee5cf"><use href="#pL" transform="translate(-2.1 6)"/><use href="#pR" transform="translate(2.1 6)"/></g>
-        <g fill="#f5eedb"><use href="#pL" transform="translate(-1.4 4)"/><use href="#pR" transform="translate(1.4 4)"/></g>
-        <g fill="#f0e8d3"><use href="#pL" transform="translate(-.7 2)"/><use href="#pR" transform="translate(.7 2)"/></g>
+      <!-- 금박 책배: 얇은 종이 13장이 겹친 두께 -->
+      <g stroke="#9c7322" stroke-width=".8">
+        <g fill="#b98b2e"><use href="#pL" transform="translate(-9.1 26)"/><use href="#pR" transform="translate(9.1 26)"/></g>
+        <g fill="#e4c063"><use href="#pL" transform="translate(-8.4 24)"/><use href="#pR" transform="translate(8.4 24)"/></g>
+        <g fill="#cfa443"><use href="#pL" transform="translate(-7.7 22)"/><use href="#pR" transform="translate(7.7 22)"/></g>
+        <g fill="#ebc96c"><use href="#pL" transform="translate(-7 20)"/><use href="#pR" transform="translate(7 20)"/></g>
+        <g fill="#d6ab4a"><use href="#pL" transform="translate(-6.3 18)"/><use href="#pR" transform="translate(6.3 18)"/></g>
+        <g fill="#efd176"><use href="#pL" transform="translate(-5.6 16)"/><use href="#pR" transform="translate(5.6 16)"/></g>
+        <g fill="#dab251"><use href="#pL" transform="translate(-4.9 14)"/><use href="#pR" transform="translate(4.9 14)"/></g>
+        <g fill="#f2d77f"><use href="#pL" transform="translate(-4.2 12)"/><use href="#pR" transform="translate(4.2 12)"/></g>
+        <g fill="#dfb858"><use href="#pL" transform="translate(-3.5 10)"/><use href="#pR" transform="translate(3.5 10)"/></g>
+        <g fill="#f5dd89"><use href="#pL" transform="translate(-2.8 8)"/><use href="#pR" transform="translate(2.8 8)"/></g>
+        <g fill="#e3bf60"><use href="#pL" transform="translate(-2.1 6)"/><use href="#pR" transform="translate(2.1 6)"/></g>
+        <g fill="#f7e293"><use href="#pL" transform="translate(-1.4 4)"/><use href="#pR" transform="translate(1.4 4)"/></g>
+        <g fill="#e8c86b"><use href="#pL" transform="translate(-.7 2)"/><use href="#pR" transform="translate(.7 2)"/></g>
       </g>
-      <!-- 단면 아래쪽 음영 -->
       <g fill="url(#gStackShade)"><use href="#pL" transform="translate(-9.1 26)"/><use href="#pR" transform="translate(9.1 26)"/></g>
 
       <!-- 책갈피 끈: 페이지 사이에 끼워져 있고, 책 아래쪽 끝부분만 빠져나와 늘어짐
            (펼친 페이지보다 먼저 그려서 윗부분은 페이지에 가려짐) -->
-      <path d="M485,585 L519,585 L520,620 C524,648 529,672 538,706 L522,692 L505,702 C493,668 487,646 486,620 Z" fill="#000" opacity=".4" filter="url(#fSoft)" transform="translate(6 6)"/>
-      <path id="ribbon" d="M485,585 L519,585 L520,620 C524,648 529,672 538,706 L522,692 L505,702 C493,668 487,646 486,620 Z" fill="url(#gRibbon)"/>
+      <path d="M492,585 L512,585 L513,620 C516,645 520,664 527,688 L518,679 L508,690 C500,664 495,644 493,620 Z" fill="#000" opacity=".45" filter="url(#fSoft)" transform="translate(4 5)"/>
+      <path id="ribbon" d="M492,585 L512,585 L513,620 C516,645 520,664 527,688 L518,679 L508,690 C500,664 495,644 493,620 Z" fill="url(#gRibbon)"/>
       <use href="#ribbon" fill="url(#pRib)"/>
-      <!-- 종이 단면 끝에서 꺾이는 부분 -->
-      <path d="M486,618 L520,618 C521,628 522,636 523,644 L488,644 C487,636 486,628 486,618 Z" fill="url(#gRibbonFold)"/>
-      <path d="M495,588 L496,620 C498,650 503,674 511,696" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="2.4"/>
-      <use href="#ribbon" fill="none" stroke="#1a1438" stroke-opacity=".55" stroke-width="1.1"/>
-      <g stroke="#7b70c4" stroke-width="1.1" stroke-linecap="round" opacity=".85">
-        <path d="M506,701 L504,709"/><path d="M510,699 L509,706"/><path d="M514,696 L514,702"/>
-        <path d="M526,694 L528,701"/><path d="M531,700 L534,707"/><path d="M536,705 L539,712"/>
+      <path d="M493,618 L513,618 C514,627 514,634 515,642 L495,642 C494,634 493,627 493,618 Z" fill="url(#gRibbonFold)"/>
+      <path d="M499,588 L500,620 C502,646 505,664 510,682" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.8"/>
+      <use href="#ribbon" fill="none" stroke="#2a0306" stroke-opacity=".6" stroke-width="1"/>
+      <g stroke="#c23440" stroke-width="1" stroke-linecap="round" opacity=".85">
+        <path d="M509,689 L508,695"/><path d="M512,686 L512,692"/><path d="M521,682 L522,688"/><path d="M525,687 L527,693"/>
       </g>
 
       <!-- 펼친 두 페이지 -->
@@ -370,9 +371,10 @@
         <path d="M500,588 C462,566 404,560 340,560" opacity=".4"/>
         <path d="M500,588 C538,566 596,560 660,560" opacity=".4"/>
       </g>
-      <!-- 페이지 상단 휘어짐 하이라이트 -->
-      <path d="M470,74 C400,46 250,40 60,52" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/>
-      <path d="M530,74 C600,46 750,40 940,52" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/>
+      <!-- 페이지 위 가장자리: 금박 테두리 + 휘어짐 하이라이트 -->
+      <g fill="none" stroke="#d9b552" stroke-width="2.2"><use href="#pL"/><use href="#pR"/></g>
+      <path d="M470,76 C400,48 250,42 62,54" fill="none" stroke="#fff" stroke-width="2.5" opacity=".75"/>
+      <path d="M530,76 C600,48 750,42 938,54" fill="none" stroke="#fff" stroke-width="2.5" opacity=".75"/>
       <!-- 책등 골 -->
       <rect x="466" y="70" width="68" height="530" fill="url(#gGutter)" clip-path="url(#cPages)"/>
       <path d="M500,82 L500,594" stroke="#7a6440" stroke-opacity=".4" stroke-width="1.5"/>
@@ -382,7 +384,6 @@
         <text x="270" y="540" font-size="16" letter-spacing="2">— 십의 자리 —</text>
         <text x="730" y="540" font-size="16" letter-spacing="2">— 일의 자리 —</text>
       </g>
-
     </svg>
     <div class="slot left" id="page0"><div class="reel" id="reel0"><div class="strip"></div></div><div class="qmark">?</div></div>
     <div class="slot right" id="page1"><div class="reel" id="reel1"><div class="strip"></div></div><div class="qmark">?</div></div>
