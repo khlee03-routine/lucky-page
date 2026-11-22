@@ -395,6 +395,7 @@
     <button class="btn draw" id="btnDraw">넘기기</button>
     <button class="btn draw hidden" id="btnNext">뒷자리 넘기기</button>
     <button class="btn ok hidden" id="btnConfirm">당첨 확정</button>
+    <button class="btn alt hidden" id="btnRedraw2" title="앞자리는 그대로 두고 뒷자리만 다시 넘깁니다">뒷자리만 다시</button>
     <button class="btn alt hidden" id="btnRedraw">다시 넘기기</button>
   </div>
 
@@ -717,13 +718,21 @@
   const status = $('status'), book = $('book');
   let busy = false;
 
-  const btnNext = $('btnNext');
+  const btnNext = $('btnNext'), btnRedraw2 = $('btnRedraw2');
+  // 뒷자리만 다시: 앞자리가 같은 번호 중 아직 안 나온 것
+  const sameTens = () => S.pending == null ? [] : remaining().filter(n => digitsOf(n)[0] === digitsOf(S.pending)[0]);
   function show(mode) { // idle | spinning | wait | decide | over
     btnDraw.classList.toggle('hidden', mode === 'decide' || mode === 'wait');
     btnDraw.disabled = mode !== 'idle';
     btnNext.classList.toggle('hidden', mode !== 'wait');
     btnConfirm.classList.toggle('hidden', mode !== 'decide');
     btnRedraw.classList.toggle('hidden', mode !== 'decide');
+    btnRedraw2.classList.toggle('hidden', mode !== 'decide');
+    if (mode === 'decide') {
+      const left = sameTens().length;
+      btnRedraw2.disabled = !left;
+      btnRedraw2.title = left ? '앞자리는 그대로 두고 뒷자리만 다시 넘깁니다' : '이 앞자리로 남은 번호가 없습니다';
+    }
     book.classList.toggle('win', mode === 'decide');
   }
   function setStatus(txt, big = false) { status.textContent = txt; status.classList.toggle('big', big); }
@@ -795,10 +804,22 @@
     draw();
   }
 
+  function redrawSecond() { // 앞자리는 유지, 지금 번호는 다시 넘김 목록으로 → 뒷자리만 새로 돌림
+    if (busy || S.pending == null || S.stage !== 2) return;
+    const pool = sameTens();
+    if (!pool.length) return;
+    S.redraws.push({ n: S.pending, t: Date.now() });
+    S.pending = pool[Math.floor(crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32 * pool.length)];
+    S.stage = 1; save();
+    renderList();
+    revealSecond();
+  }
+
   btnDraw.onclick = draw;
   btnNext.onclick = revealSecond;
   btnConfirm.onclick = confirmWin;
   btnRedraw.onclick = redraw;
+  btnRedraw2.onclick = redrawSecond;
 
   // ================= 서랍 (보조 기능) =================
   let tab = 'winners';
